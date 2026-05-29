@@ -1,3 +1,11 @@
+**Maintenance Review Recommended**
+
+> **Notice:** This fork has not been updated since July 14, 2019 (over 4 years ago). Review it before new use and compare it with active upstream repositories or maintained alternatives.
+>
+> **Hinweis:** Dieser Fork wurde seit dem 14. Juli 2019 nicht mehr aktualisiert (über 4 Jahre). Prüfen Sie ihn vor neuer Nutzung und vergleichen Sie ihn mit aktiven Upstream-Repositories oder gepflegten Alternativen.
+
+---
+
 Arduino core for ESP8266 WiFi chip
 ===========================================
 
