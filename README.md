@@ -1,8 +1,8 @@
-⚠️ **ARCHIVED REPOSITORY**
+**Maintenance Review Recommended**
 
-> **Notice:** This repository has not been updated since July 14, 2019 (over 4 years ago). It is considered **archived** and no longer actively maintained. For ESP8266 development, please check if there is an active fork or alternative project. Use at your own risk.
+> **Notice:** This fork has not been updated since July 14, 2019 (over 4 years ago). Review it before new use and compare it with active upstream repositories or maintained alternatives.
 >
-> **Hinweis:** Dieses Repository wurde seit dem 14. Juli 2019 nicht mehr aktualisiert (über 4 Jahre). Es gilt als **archiviert** und wird nicht mehr aktiv gepflegt. Für ESP8266-Entwicklung prüfen Sie bitte, ob es einen aktiven Fork oder ein Alternativprojekt gibt. Nutzung auf eigene Gefahr.
+> **Hinweis:** Dieser Fork wurde seit dem 14. Juli 2019 nicht mehr aktualisiert (über 4 Jahre). Prüfen Sie ihn vor neuer Nutzung und vergleichen Sie ihn mit aktiven Upstream-Repositories oder gepflegten Alternativen.
 
 ---
 
