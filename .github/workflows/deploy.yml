@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-package:
+    name: Build Package
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set environment variables
+        run: echo "TRAVIS_BUILD_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: sudo apt-get install -y python3-pip
+
+      - name: Build package
+        run: |
+          chmod +x tests/ci/build_package.sh
+          BUILD_TYPE=package tests/ci/build_package.sh
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            package/versions/${{ github.ref_name }}/esp8266-${{ github.ref_name }}.zip
+            package/versions/${{ github.ref_name }}/package_esp8266com_index.json
+          draft: true
+          tag_name: ${{ github.ref_name }}
+          target_commitish: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update package index
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          chmod +x package/deploy_package_index.sh
+          bash package/deploy_package_index.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

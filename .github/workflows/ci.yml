@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - ai/fix-issue-1
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # PlatformIO builds
+          - job_name: PlatformIO (even)
+            script: tests/platformio.sh
+            build_parity: even
+          - job_name: PlatformIO (odd)
+            script: tests/platformio.sh
+            build_parity: odd
+          # Arduino builds
+          - job_name: Arduino Build (even)
+            script: tests/build.sh
+            build_parity: even
+          - job_name: Arduino Build (odd)
+            script: tests/build.sh
+            build_parity: odd
+          # Debug builds
+          - job_name: Debug Build (even)
+            script: tests/debug.sh
+            build_parity: even
+          - job_name: Debug Build (odd)
+            script: tests/debug.sh
+            build_parity: odd
+          # IPv6 builds
+          - job_name: IPv6 Build (even)
+            script: tests/build6.sh
+            build_parity: even
+          - job_name: IPv6 Build (odd)
+            script: tests/build6.sh
+            build_parity: odd
+          # lwIP-v1.4 builds
+          - job_name: lwIP-v1.4 Build (even)
+            script: tests/build1.sh
+            build_parity: even
+          - job_name: lwIP-v1.4 Build (odd)
+            script: tests/build1.sh
+            build_parity: odd
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set environment variables
+        run: |
+          echo "TRAVIS_BUILD_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          echo "CC=gcc-7" >> $GITHUB_ENV
+          echo "CXX=g++-7" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-7 gcc-7 arduino valgrind lcov
+          # Install xtensa toolchain
+          wget -q https://github.com/esp8266/Arduino/releases/download/2.5.2/xtensa-lx106-elf-linux64-1.22.0-98.txz
+          tar -xf xtensa-lx106-elf-linux64-1.22.0-98.txz -C ~/
+          echo "$HOME/xtensa-lx106-elf/bin" >> $GITHUB_PATH
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --user -U platformio
+          pip install --user -r doc/requirements.txt 2>/dev/null || true
+
+      - name: Prepare PlatformIO (for PlatformIO jobs)
+        if: contains(matrix.script, 'platformio')
+        run: |
+          pip install --user -U https://github.com/platformio/platformio/archive/develop.zip
+          platformio platform install "https://github.com/platformio/platform-espressif8266.git#feature/stage"
+          sed -i 's|https://github.com/esp8266/Arduino.git|*|' ~/.platformio/platforms/espressif8266/platform.json
+          ln -s $GITHUB_WORKSPACE ~/.platformio/packages/framework-arduinoespressif8266
+          pio lib install "ArduinoJson@^6.11.0"
+
+      - name: Make scripts executable
+        run: |
+          chmod +x tests/*.sh
+          chmod +x tests/ci/*.sh
+
+      - name: Run test script
+        run: |
+          export BUILD_PARITY=${{ matrix.build_parity }}
+          ${{ matrix.script }}
+
+  host-tests:
+    name: Host Tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set environment variables
+        run: |
+          echo "TRAVIS_BUILD_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          echo "CC=gcc-7" >> $GITHUB_ENV
+          echo "CXX=g++-7" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: sudo apt-get install -y valgrind lcov
+
+      - name: Run host tests
+        run: |
+          chmod +x tests/ci/host_test.sh
+          tests/ci/host_test.sh
+
+  mock-test:
+    name: Mock Trivial Test
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set environment variables
+        run: |
+          echo "TRAVIS_BUILD_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          echo "CC=gcc-7" >> $GITHUB_ENV
+          echo "CXX=g++-7" >> $GITHUB_ENV
+
+      - name: Run mock test
+        run: |
+          chmod +x tests/buildm.sh
+          tests/buildm.sh
+
+  build-boards:
+    name: Build Boards
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set environment variables
+        run: echo "TRAVIS_BUILD_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+      - name: Build boards
+        run: |
+          chmod +x tests/ci/build_boards.sh
+          tests/ci/build_boards.sh
